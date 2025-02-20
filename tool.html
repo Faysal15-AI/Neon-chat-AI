@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberTools Pro</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+    <style>
+    :root { --neon-cyan: #00f7ff; --neon-purple: #bd00ff; --glass-bg: rgba(255, 255, 255, 0.05) }
+    body { 
+        font-family: 'Inter', sans-serif; 
+        background: #0a0a0f; 
+        color: white;
+        margin: 0;
+        padding: 20px;
+    }
+    @keyframes slideIn { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .gradient-text { background: linear-gradient(45deg, var(--neon-cyan), var(--neon-purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent }
+    .glass-panel { 
+        background: var(--glass-bg); 
+        backdrop-filter: blur(12px); 
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 20px;
+        margin: 10px 0;
+    }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 3px; }
+    .typing-dot { animation: pulse 1.4s infinite ease-in-out; }
+    @keyframes pulse { 0%, 80%, 100% { opacity: 1; } 40% { opacity: 0.5; } }
+    
+    [data-theme="cyberpunk"] { --neon-cyan: #00f7ff; --neon-purple: #bd00ff; --glass-bg: rgba(0, 0, 0, 0.7) }
+    [data-theme="midnight"] { --neon-cyan: #6bfff7; --neon-purple: #9d4edd; --glass-bg: rgba(25, 25, 60, 0.8) }
+    [data-theme="sunset"] { --neon-cyan: #ff6b6b; --neon-purple: #ff9f43; --glass-bg: rgba(50, 30, 20, 0.8) }
+    
+    /* Custom Styles */
+    .tool-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 15px;
+        margin-top: 20px;
+    }
+    .tool-card {
+        padding: 15px;
+        border: 1px solid var(--neon-purple);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    .tool-card:hover {
+        background: rgba(189, 0, 255, 0.1);
+        transform: translateY(-3px);
+    }
+    .tool-content {
+        display: none;
+        animation: slideIn 0.3s ease;
+    }
+    input, textarea, button {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid var(--neon-cyan);
+        color: white;
+        padding: 10px;
+        margin: 5px 0;
+        border-radius: 6px;
+    }
+    button {
+        background: linear-gradient(45deg, var(--neon-cyan), var(--neon-purple));
+        border: none;
+        cursor: pointer;
+    }
+    #qrcode { margin: 20px 0; }
+    .category { margin: 20px 0; }
+    .category h3 { border-bottom: 2px solid var(--neon-cyan); padding-bottom: 10px; }
+    .output-box { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; margin: 10px 0; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    </style>
+</head>
+<body data-theme="cyberpunk">
+    <div class="glass-panel">
+        <h1 class="gradient-text">⚡ CyberTools Pro</h1>
+        <input type="text" id="search" placeholder="🔍 Search tools..." style="width: 100%">
+
+        <!-- Text Tools -->
+        <div class="category">
+            <h3>📝 Text Tools</h3>
+            <div class="tool-grid">
+                <div class="tool-card" onclick="showTool('caseConverter')">🔠 Case Converter</div>
+                <div class="tool-card" onclick="showTool('wordCounter')">📏 Word Counter</div>
+                <div class="tool-card" onclick="showTool('loremIpsum')">📄 Lorem Generator</div>
+            </div>
+        </div>
+
+        <!-- Web Tools -->
+        <div class="category">
+            <h3>🌐 Web Tools</h3>
+            <div class="tool-grid">
+                <div class="tool-card" onclick="showTool('urlCoder')">🔗 URL Encoder</div>
+                <div class="tool-card" onclick="showTool('jsonFormatter')">🛠 JSON Formatter</div>
+                <div class="tool-card" onclick="showTool('qrcodeGen')">📲 QR Generator</div>
+            </div>
+        </div>
+
+        <!-- Security Tools -->
+        <div class="category">
+            <h3>🔐 Security Tools</h3>
+            <div class="tool-grid">
+                <div class="tool-card" onclick="showTool('passwordGen')">🔑 Password Gen</div>
+                <div class="tool-card" onclick="showTool('hashGenerator')">🔗 Hash Gen</div>
+                <div class="tool-card" onclick="showTool('base64')">📦 Base64 Coder</div>
+            </div>
+        </div>
+
+        <!-- Photo Tools -->
+        <div class="category">
+            <h3>📸 Photo Tools</h3>
+            <div class="tool-grid">
+                <div class="tool-card" onclick="showTool('formatChange')">🖼️ Format Convert</div>
+                <div class="tool-card" onclick="showTool('photoEnhance')">✨ Enhance</div>
+                <div class="tool-card" onclick="showTool('aiPhotoEdit')">🤖 AI Edit</div>
+            </div>
+        </div>
+
+        <!-- Tool Contents -->
+        <div id="caseConverter" class="tool-content">
+            <h3>🔠 Case Converter</h3>
+            <textarea id="inputText" rows="4"></textarea>
+            <div class="two-col">
+                <button onclick="convertText('upper')">UPPERCASE</button>
+                <button onclick="convertText('lower')">lowercase</button>
+            </div>
+            <div class="output-box" id="outputText"></div>
+        </div>
+
+        <div id="passwordGen" class="tool-content">
+            <h3>🔑 Password Generator</h3>
+            <input type="number" id="passLength" value="12" min="8" max="32">
+            <button onclick="generatePassword()">Generate</button>
+            <div class="output-box" id="passwordOutput"></div>
+        </div>
+
+        <div id="qrcodeGen" class="tool-content">
+            <h3>📲 QR Code Generator</h3>
+            <input type="text" id="qrInput">
+            <button onclick="generateQR()">Generate</button>
+            <div id="qrcode"></div>
+        </div>
+
+        <!-- Photo Tools Content -->
+        <div id="formatChange" class="tool-content">
+            <h3>🖼️ Format Converter</h3>
+            <input type="file" id="imageInput" accept="image/*">
+            <select id="formatSelect">
+                <option value="png">PNG</option>
+                <option value="jpeg">JPEG</option>
+            </select>
+            <button onclick="convertImage()">Convert</button>
+            <div class="output-box">
+                <img id="convertedImage" style="max-width: 300px; display: none;">
+                <a id="downloadLink" style="display: none;">Download</a>
+            </div>
+        </div>
+
+        <script>
+        // Core Tools
+        function showTool(toolId) {
+            document.querySelectorAll('.tool-content').forEach(el => el.style.display = 'none');
+            document.getElementById(toolId).style.display = 'block';
+        }
+
+        // Case Converter
+        function convertText(caseType) {
+            const text = document.getElementById('inputText').value;
+            document.getElementById('outputText').textContent = caseType === 'upper' ? 
+                text.toUpperCase() : text.toLowerCase();
+        }
+
+        // Password Generator
+        function generatePassword() {
+            const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+            const array = new Uint32Array(document.getElementById('passLength').value);
+            crypto.getRandomValues(array);
+            let password = "";
+            for(let i = 0; i < array.length; i++) {
+                password += chars[array[i] % chars.length];
+            }
+            document.getElementById('passwordOutput').textContent = password;
+        }
+
+        // QR Code Generator
+        function generateQR() {
+            const text = document.getElementById('qrInput').value;
+            document.getElementById('qrcode').innerHTML = "";
+            new QRCode(document.getElementById('qrcode'), {
+                text: text,
+                width: 200,
+                height: 200,
+                colorDark: "#000000",
+                colorLight: "#ffffff"
+            });
+        }
+
+        // Photo Tools
+        function convertImage() {
+            const file = document.getElementById('imageInput').files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.getElementById('convertedImage');
+                img.src = e.target.result;
+                img.style.display = 'block';
+                document.getElementById('downloadLink').href = e.target.result;
+                document.getElementById('downloadLink').download = `converted.${document.getElementById('formatSelect').value}`;
+                document.getElementById('downloadLink').style.display = 'inline-block';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Search
+        document.getElementById('search').addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            document.querySelectorAll('.tool-card').forEach(card => {
+                card.style.display = card.textContent.toLowerCase().includes(term) ? 'block' : 'none';
+            });
+        });
+        </script>
+    </div>
+</body>
+</html>

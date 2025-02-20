@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="default">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NeonChat Pro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    :root { --neon-cyan: #00f7ff; --neon-purple: #bd00ff; --glass-bg: rgba(255, 255, 255, 0.05) }
+    body { font-family: 'Inter', sans-serif; background: #0a0a0f }
+    @keyframes slideIn { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .gradient-text { background: linear-gradient(45deg, var(--neon-cyan), var(--neon-purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent }
+    .glass-panel { background: var(--glass-bg); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1) }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 3px; }
+    .typing-dot { animation: pulse 1.4s infinite ease-in-out; }
+    @keyframes pulse { 0%, 80%, 100% { opacity: 1; } 40% { opacity: 0.5; } }
+    
+    [data-theme="cyberpunk"] { --neon-cyan: #00f7ff; --neon-purple: #bd00ff; --glass-bg: rgba(0, 0, 0, 0.7) }
+    [data-theme="midnight"] { --neon-cyan: #6bfff7; --neon-purple: #9d4edd; --glass-bg: rgba(25, 25, 60, 0.8) }
+    [data-theme="sunset"] { --neon-cyan: #ff6b6b; --neon-purple: #ff9f43; --glass-bg: rgba(50, 30, 20, 0.8) }
+  </style>
+</head>
+<body class="text-gray-100">
+  
+    <!-- Add search bar -->
+  <div class="glass-panel p-2 mb-2 flex gap-2">
+  <input id="searchInput" type="text" placeholder="Search messages..." class="flex-1 bg-transparent px-2">
+  <button onclick="searchMessages()" class="px-2 py-2 bg-cyan-500/20 rounded-lg">Search</button>
+</div>
+  
+  <!-- Hamburger Menu -->
+  <div class="fixed top-4 right-4 z-50">
+    <button id="menuButton" class="glass-panel p-3 rounded-xl hover:bg-white/5 transition-colors">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+      </svg>
+    </button>
+    
+    
+    <div id="menuDropdown" class="hidden absolute right-0 mt-2 w-48 glass-panel rounded-xl p-2 space-y-2">
+      <button onclick="showModal('profile')" class="w-full px-4 py-3 text-left rounded-lg hover:bg-white/5 flex items-center gap-2">👤 Profile</button>
+      <button onclick="showModal('language')" class="w-full px-4 py-3 text-left rounded-lg hover:bg-white/5 flex items-center gap-2">🌐 Language</button>
+      <button onclick="showModal('downloads')" class="w-full px-4 py-3 text-left rounded-lg hover:bg-white/5 flex items-center gap-2">📥 Downloads</button>
+      <button onclick="showModal('notifications')" class="w-full px-4 py-3 text-left rounded-lg hover:bg-white/5 flex items-center gap-2">🔔 Notifications</button>
+      <button onclick="showModal('Tool')" class="w-full px-4 py-3 text-left rounded-lg hover:bg-white/5 flex items-center gap-2"><a href="tool.html">🧰Tool</a></button>
+      <button onclick="showModal('Ai page builder')" class="w-full px-4 py-3 text-left rounded-lg hover:bg-white/5 flex items-center gap-2"><a href="ai page builder .html">📃AI Page Builder</a></button>
+      <button onclick="toggleTheme()" class="w-full px-4 py-3 text-left rounded-lg hover:bg-white/5 flex items-center gap-2">🎨 Theme</button>
+    </div>
+  </div>
+
+  <!-- Chat Container -->
+  <div class="container mx-auto px-4 py-20 max-w-4xl">
+    <div class="glass-panel rounded-2xl p-4 h-[85vh] flex flex-col">
+      <div id="chatWindow" class="flex-1 overflow-y-auto custom-scrollbar space-y-4 pr-2">
+        <div id="typingIndicator" class="hidden items-start mb-4">
+          <div class="glass-panel px-4 py-2 rounded-xl flex items-center gap-2">
+            <div class="flex space-x-1">
+              <div class="w-2 h-2 bg-cyan-400 rounded-full typing-dot"></div>
+              <div class="w-2 h-2 bg-cyan-400 rounded-full typing-dot" style="animation-delay: 0.2s"></div>
+              <div class="w-2 h-2 bg-cyan-400 rounded-full typing-dot" style="animation-delay: 0.4s"></div>
+            </div>
+            <span class="text-sm text-cyan-400">Dom is typing...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Input Area -->
+      <div class="mt-4 glass-panel rounded-xl p-2">
+        <div class="flex gap-2">
+          <input id="messageInput" type="text" 
+                 class="flex-1 bg-transparent px-4 py-3 focus:outline-none placeholder:text-gray-500"
+                 placeholder="Type or speak your message...">
+          <button id="sendBtn" class="px-5 py-3 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-xl hover:opacity-90 transition-opacity">
+            <span class="gradient-text font-semibold">Ask Dom!</span>
+          </button>
+        </div>
+        <div class="mt-2 flex justify-between items-center px-2">
+          <div class="flex gap-3">
+            <button class="p-2 hover:bg-white/5 rounded-lg" onclick="document.getElementById('fileInput').click()">
+              📎 <input type="file" id="fileInput" class="hidden" multiple>
+            </button>
+            <button id="voiceBtn" class="p-2 hover:bg-white/5 rounded-lg">🎤</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modals -->
+  <div id="languageModal" class="fixed inset-0 bg-black/50 hidden backdrop-blur-sm">
+    <div class="glass-panel rounded-2xl p-6 max-w-md mx-auto mt-20">
+      <h2 class="text-2xl font-bold gradient-text mb-6">Language Settings</h2>
+      <div class="space-y-4">
+        <div>
+          <label class="block mb-2">Input Language</label>
+          <select id="inputLang" class="glass-panel w-full px-4 py-3 rounded-lg">
+            <option value="auto">Auto Detect</option>
+            <option value="en">English</option>
+            <option value="es">Español</option>
+            <option value="ja">日本語</option>
+            <option value="bn">বাংলা</option>
+          </select>
+        </div>
+        <div>
+          <label class="block mb-2">Output Language</label>
+          <select id="outputLang" class="glass-panel w-full px-4 py-3 rounded-lg">
+            <option value="en">English</option>
+            <option value="es">Español</option>
+            <option value="ja">日本語</option>
+            <option value="bn">বাংলা</option>
+          </select>
+        </div>
+        <button onclick="saveLangSettings()" class="w-full bg-cyan-500/20 px-6 py-3 rounded-lg hover:bg-cyan-500/30">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="profileModal" class="fixed inset-0 bg-black/50 hidden backdrop-blur-sm">
+    <div class="glass-panel rounded-2xl p-6 max-w-md mx-auto mt-20">
+      <h2 class="text-2xl font-bold gradient-text mb-6">Profile Settings</h2>
+      <div class="space-y-4">
+        <div class="flex items-center gap-4">
+          <div class="relative">
+            <img id="profileImage" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSIjOTRhM2I4Ij48cGF0aCBkPSJNMTIgMGMtNi42MjcgMC0xMiA1LjM3My0xMiAxMnM1LjM3MyAxMiAxMiAxMiAxMi01LjM3MyAxMi0xMi01LjM3My0xMi0xMi0xMnptMCAyMmMtNS41MjIgMC0xMC00LjQ3OC0xMC0xMHM0LjQ3OC0xMCAxMC0xMCAxMCA0LjQ3OCAxMCAxMC00LjQ3OCAxMC0xMCAxMHptLTUtOGgxMHYyaC0xMHYtMnptNS00djJoLTJ2LTJoLTJ2NGg0di00aC0yem0wIDZ2MmgtMnYtMmgyeiIvPjwvc3ZnPg==" 
+                 class="w-16 h-16 rounded-full cursor-pointer">
+            <input type="file" id="avatarInput" class="hidden" accept="image/*">
+          </div>
+          <input id="nicknameInput" type="text" placeholder="Enter nickname" 
+                 class="glass-panel px-4 py-2 rounded-lg flex-1">
+        </div>
+        <button onclick="saveProfile()" class="w-full bg-cyan-500/20 px-6 py-3 rounded-lg hover:bg-cyan-500/30">Save Profile</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="downloadsModal" class="fixed inset-0 bg-black/50 hidden backdrop-blur-sm">
+    <div class="glass-panel rounded-2xl p-6 max-w-md mx-auto mt-20">
+      <h2 class="text-2xl font-bold gradient-text mb-6">Export Chat</h2>
+      <div class="space-y-4">
+        <button onclick="exportChat('pdf')" class="w-full glass-panel px-6 py-4 rounded-lg hover:bg-white/5 flex items-center gap-3">📄 PDF Export</button>
+        <button onclick="exportChat('json')" class="w-full glass-panel px-6 py-4 rounded-lg hover:bg-white/5 flex items-center gap-3">📁 JSON Export</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="notificationsModal" class="fixed inset-0 bg-black/50 hidden backdrop-blur-sm">
+    <div class="glass-panel rounded-2xl p-6 max-w-md mx-auto mt-20">
+      <h2 class="text-2xl font-bold gradient-text mb-6">Notification Settings</h2>
+      <div class="space-y-4">
+        <label class="flex items-center gap-3 glass-panel p-4 rounded-lg">
+          <input type="checkbox" id="messageNotifications" class="form-checkbox rounded text-cyan-500">
+          New Message Alerts
+        </label>
+        <label class="flex items-center gap-3 glass-panel p-4 rounded-lg">
+          <input type="checkbox" id="soundNotifications" class="form-checkbox rounded text-cyan-500">
+          Notification Sounds
+        </label>
+        <button onclick="saveNotificationSettings()" class="w-full bg-cyan-500/20 px-6 py-3 rounded-lg hover:bg-cyan-500/30">Save Settings</button>
+      </div>
+    </div>
+  </div>
+  
+
+  <script>
+    // Original functionality
+    let websocket = null;
+    let isReceiving = false;
+    const chatId = crypto.randomUUID();
+    const systemPrompt = "All hackers are hare, where are you?";
+    let currentInputLang = localStorage.getItem('inputLang') || 'auto';
+    let currentOutputLang = localStorage.getItem('outputLang') || 'en';
+    let userProfile = JSON.parse(localStorage.getItem('userProfile')) || {};
+    // Virtual scrolling
+    let visibleMessages = [];
+   const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if(entry.isIntersecting) {
+      // Load message content
+    }
+  });
+}, { root: document.getElementById('chatWindow'), threshold: 0.1 });
+
+// Implement message chunking
+const messageChunks = [];
+let currentChunk = 0;
+
+function loadMessageChunk() {
+  messageChunks[currentChunk].forEach(msg => {
+    createMessage(msg.text, msg.isUser);
+  });
+  currentChunk++;
+}
+
+    document.getElementById('menuButton').addEventListener('click', (e) => {
+      e.stopPropagation();
+      document.getElementById('menuDropdown').classList.toggle('hidden');
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('#menuDropdown') && !e.target.closest('#menuButton')) {
+        document.getElementById('menuDropdown').classList.add('hidden');
+      }
+    });
+    
+    function createMessage(text, isUser = false) {
+      const div = document.createElement('div');
+      div.className = `flex ${isUser ? 'justify-end' : 'justify-start'} animate-slideIn`;
+      div.innerHTML = `
+        <div class="${isUser ? 'bg-gradient-to-r from-cyan-500/20 to-purple-500/20' : 'glass-panel'} 
+                     max-w-[85%] p-4 rounded-2xl ${isUser ? 'rounded-br-none' : 'rounded-bl-none'} 
+                     border border-white/10 mb-2">
+          <p class="${isUser ? 'text-cyan-300' : 'text-gray-100'}">${text}</p>
+          <div class="mt-2 text-xs ${isUser ? 'text-cyan-400/70' : 'text-gray-400/70'}">
+            ${new Date().toLocaleTimeString()}
+          </div>
+        </div>
+      `;
+      document.getElementById('chatWindow').appendChild(div);
+      div.scrollIntoView({ behavior: 'smooth' });
+      return div;
+    }
+  function searchMessages() {
+  const query = document.getElementById('searchInput').value.toLowerCase();
+  const messages = document.querySelectorAll('[class*="flex justify"] p');
+  
+  messages.forEach(msg => {
+    const content = msg.textContent.toLowerCase();
+    msg.closest('div').style.display = content.includes(query) ? 'flex' : 'none';
+  });
+}
+  function enableMessageEditing() {
+  document.getElementById('chatWindow').addEventListener('dblclick', (e) => {
+    const messageText = e.target.closest('p');
+    if(messageText) {
+      const originalText = messageText.textContent;
+      const textarea = document.createElement('textarea');
+      textarea.value = originalText;
+      messageText.replaceWith(textarea);
+      
+      textarea.addEventListener('blur', () => {
+        const newText = textarea.value;
+        messageText.textContent = newText;
+        textarea.replaceWith(messageText);
+        // Update message in localStorage
+      });
+    }
+  });
+    // WebSocket error handling
+websocket.onerror = (error) => {
+  createMessage('Connection error - please try again later', false);
+  document.getElementById('typingIndicator').classList.add('hidden');
+};
+
+// Add reconnect logic
+let reconnectAttempts = 0;
+function reconnect() {
+  if(reconnectAttempts < 3) {
+    setTimeout(() => connectWebSocket(lastMessage), 1000 * reconnectAttempts);
+    reconnectAttempts++;
+  }
+}
+}
+    function connectWebSocket(message, isInit = false) {
+      isReceiving = true;
+      document.getElementById('typingIndicator').classList.remove('hidden');
+      
+      websocket = new WebSocket("wss://backend.buildpicoapps.com/api/chatbot/chat");
+      
+      websocket.onopen = () => {
+        websocket.send(JSON.stringify({
+          chatId: chatId,
+          appId: "seven-structure",
+          systemPrompt: systemPrompt,
+          message: isInit ? "Welcome message" : message
+        }));
+      };
+
+      const messageElement = createMessage('', false);
+      let firstChunk = true;
+
+      websocket.onmessage = async (event) => {
+        if (firstChunk) {
+          document.getElementById('typingIndicator').classList.add('hidden');
+          firstChunk = false;
+        }
+        messageElement.querySelector('p').textContent += event.data;
+      };
+
+      websocket.onclose = () => {
+        isReceiving = false;
+        document.getElementById('typingIndicator').classList.add('hidden');
+      };
+    }
+
+    document.getElementById('sendBtn').addEventListener('click', async () => {
+      const message = document.getElementById('messageInput').value.trim();
+      if (message && !isReceiving) {
+        document.getElementById('messageInput').value = '';
+        createMessage(message, true);
+        connectWebSocket(message);
+      }
+    });
+
+    document.getElementById('fileInput').addEventListener('change', function(e) {
+      Array.from(e.target.files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          createMessage(
+            file.type.startsWith('image') 
+              ? `<img src="${reader.result}" class="max-w-xs rounded-lg my-2">`
+              : `<a href="${reader.result}" download="${file.name}" class="text-cyan-400 hover:underline">📁 ${file.name}</a>`,
+            true
+          );
+        };
+        reader.readAsDataURL(file);
+      });
+    });
+
+    // New features
+    function showModal(type) {
+      const modals = ['language', 'profile', 'downloads', 'notifications'];
+      modals.forEach(modal => document.getElementById(`${modal}Modal`).classList.add('hidden'));
+      document.getElementById(`${type}Modal`).classList.remove('hidden');
+    }
+
+    function toggleTheme() {
+      const themes = ['cyberpunk', 'midnight', 'sunset'];
+      const currentTheme = localStorage.getItem('theme') || 'default';
+      const newTheme = themes[(themes.indexOf(currentTheme) + 1) % themes.length];
+      document.documentElement.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+    }
+
+    function saveProfile() {
+      userProfile.nickname = document.getElementById('nicknameInput').value;
+      localStorage.setItem('userProfile', JSON.stringify(userProfile));
+      showModal('profile');
+    }
+
+    document.getElementById('avatarInput').addEventListener('change', function(e) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        userProfile.avatar = reader.result;
+        document.getElementById('profileImage').src = reader.result;
+        localStorage.setItem('userProfile', JSON.stringify(userProfile));
+      };
+      reader.readAsDataURL(e.target.files[0]);
+    });
+  
+    function exportChat(format) {
+      const messages = Array.from(document.getElementById('chatWindow').children)
+        .filter(el => el.classList.contains('animate-slideIn'))
+        .map(el => ({
+          text: el.querySelector('p').innerHTML,
+                time: el.querySelector('.text-xs').textContent,
+      type: el.classList.contains('justify-end') ? 'sent' : 'received'
+    }));
+
+  const progressModal = document.createElement('div');
+  progressModal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center';
+  progressModal.innerHTML = `
+    <div class="glass-panel p-6 rounded-xl w-64 text-center">
+      <div class="animate-spin mb-4">🔄</div>
+      <p>Exporting ${format.toUpperCase()}...</p>
+      <div class="h-1 bg-white/10 mt-4 rounded-full overflow-hidden">
+        <div id="exportProgress" class="h-full bg-cyan-500 transition-all duration-300" style="width: 0%"></div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(progressModal);
+
+  let progress = 0;
+  const interval = setInterval(() => {
+    progress += 10;
+    document.getElementById('exportProgress').style.width = `${progress}%`;
+    if (progress >= 100) {
+      clearInterval(interval);
+      progressModal.remove();
+      if(format === 'json') {
+        const blob = new Blob([JSON.stringify(messages)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'chat-history.json';
+        a.click();
+      } else if(format === 'pdf') {
+        const doc = new jspdf.jsPDF();
+        doc.text('Chat History\n\n', 10, 10);
+        messages.forEach((msg, i) => {
+          doc.text(`${msg.time} [${msg.type}]: ${msg.text.replace(/<[^>]*>/g, '')}`, 10, 20 + (i * 10));
+        });
+        doc.save('chat-history.pdf');
+      }
+    }
+  }, 100);
+}
+
+function saveNotificationSettings() {
+  const settings = {
+    messages: document.getElementById('messageNotifications').checked,
+    sound: document.getElementById('soundNotifications').checked
+  };
+  localStorage.setItem('notifications', JSON.stringify(settings));
+  showModal('notifications');
+}
+
+// Initialization
+connectWebSocket('', true);
+document.getElementById('inputLang').value = currentInputLang;
+document.getElementById('outputLang').value = currentOutputLang;
+document.documentElement.setAttribute('data-theme', localStorage.getItem('theme') || 'default');
+  </script>
+
+</body>
+
+</html>
